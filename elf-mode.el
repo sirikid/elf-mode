@@ -33,30 +33,24 @@
 
 ;;; Code:
 
-(defvar-local elf-mode nil)
-
-(defun elf-setup-default ()
-  "Make `elf-mode' get called automatically for binaries."
-  (add-to-list 'magic-mode-alist (cons "ELF" 'elf-mode)))
-
 (defvar elf-mode-command "readelf --syms -W %s"
   "The shell command to use for `elf-mode'.")
 
 ;;;###autoload
-(defun elf-mode ()
-  (interactive)
+(define-derived-mode elf-mode fundamental-mode "Elf"
+  "TODO"
   (let ((inhibit-read-only t))
-    (if elf-mode
-        (progn
-          (erase-buffer)
-          (insert-file-contents (buffer-file-name))
-          (setq elf-mode nil))
-      (setq elf-mode t)
-      (erase-buffer)
-      (insert (shell-command-to-string
-               (format elf-mode-command (buffer-file-name)))))
+    (erase-buffer)
+    (insert (shell-command-to-string
+             (format elf-mode-command (buffer-file-name))))
     (set-buffer-modified-p nil)
     (read-only-mode 1)))
+
+;;;###autoload
+(add-to-list 'magic-mode-alist '("\177ELF" . elf-mode))
+
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.elf\\'" . elf-mode))
 
 (provide 'elf-mode)
 ;;; elf-mode.el ends here
