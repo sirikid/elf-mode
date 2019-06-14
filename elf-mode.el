@@ -36,21 +36,65 @@
 (defvar elf-mode-command "readelf --syms -W %s"
   "The shell command to use for `elf-mode'.")
 
+(defun elf-revert-buffer ()
+  (interactive)
+  (when (eq 'elf-mode major-mode)
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (insert
+       (shell-command-to-string
+        (format elf-mode-command (buffer-file-name))))
+      (set-buffer-modified-p nil))))
+
+(defvar-local elf-mode-disassemble-command
+  "objdump --disassemble=%s %s")
+
+(defun elf-mode-set-disassemble-command (s)
+  (interactive "sDisassemble command: ")
+  (unless (string-empty-p s)
+    (setq elf-mode-disassemble-command s)))
+
+(defun elf-mode-disassemble (o)
+  (interactive)
+  (let* ((symbol (buffer-substring (overlay-start o) (overlay-end o)))
+         (buffer-name (format "%s(%s)" (buffer-name) symbol))
+         (command (format elf-mode-disassemble-command symbol (buffer-file-name))))
+    (with-current-buffer (pop-to-buffer buffer-name)
+      (shell-command command (current-buffer))
+      (flush-lines "^[[:space:]]*$" (point-min) (point-max))
+      (set-buffer-modified-p nil)
+      (asm-mode)
+      (read-only-mode))))
+
+(defun elf-add-func-refs ()
+  (save-excursion
+    (goto-char (point-min))
+    (while (search-forward "FUNC")
+      (dotimes (_i 3)
+        (skip-chars-forward " \t")
+        (search-forward " "))
+      (let ((beg (point))
+            (end (progn (forward-word) (point))))
+        (make-button
+         beg end
+         'action #'elf-mode-disassemble
+         'mouse-action #'elf-mode-disassemble)))))
+
+(defconst elf-mode-syntax-table
+  (let ((st (make-syntax-table)))
+    (modify-syntax-entry ?_ "w" st)
+    st))
+
 ;;;###autoload
-(define-derived-mode elf-mode fundamental-mode "Elf"
+(define-derived-mode elf-mode special-mode "Elf"
   "TODO"
-  (let ((inhibit-read-only t))
-    (erase-buffer)
-    (insert (shell-command-to-string
-             (format elf-mode-command (buffer-file-name))))
-    (set-buffer-modified-p nil)
-    (read-only-mode 1)))
+  :syntax-table elf-mode-syntax-table
+  (elf-revert-buffer)
+  (elf-add-func-refs)
+  (read-only-mode))
 
 ;;;###autoload
 (add-to-list 'magic-mode-alist '("\177ELF" . elf-mode))
-
-;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.elf\\'" . elf-mode))
 
 (provide 'elf-mode)
 ;;; elf-mode.el ends here
