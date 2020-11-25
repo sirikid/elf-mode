@@ -1,0 +1,11 @@
+# Eldev stash
+/.eldev/
+
+# Built package
+/dist/
+
+# Elisp bytecode
+*.elc
+
+# Generated autoloads
+*-autoloads.el
