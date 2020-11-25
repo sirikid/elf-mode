@@ -17,7 +17,7 @@
 
 ;; Author: Ivan Sokolov <ivan-p-sokolov@ya.ru>
 ;; URL: https://github.com/sirikid/readelf-mode
-;; Version: 0.1.0
+;; Version: 1.0.0
 ;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: data
 
